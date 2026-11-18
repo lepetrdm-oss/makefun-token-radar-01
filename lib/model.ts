@@ -247,7 +247,9 @@ export function isRankable(p: SnapshotProtocol): boolean {
 /** The comps table: one median market-cap-per-TVL multiple per category, shrunk to the global
  *  median where the category has few live comps, and the global median itself. */
 export function buildComps(snapshot: Snapshot, model: ModelConstants = MODEL): { global: number; byCategory: Map<string, { n: number; median: number; multiple: number }> } {
-  const live = snapshot.protocols.filter((p) => p.mcap_usd !== null && p.tvl_usd > 0);
+  // A zero market cap is a dead token, not a live comp: including its 0 ratio
+  // would drag every median down, so comps need a positive market cap and TVL.
+  const live = snapshot.protocols.filter((p) => p.mcap_usd !== null && p.mcap_usd > 0 && p.tvl_usd > 0);
   const all = live.map((p) => p.mcap_usd! / p.tvl_usd).sort((a, b) => a - b);
   const global = median(all);
   const byCat = new Map<string, number[]>();
